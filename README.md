@@ -55,31 +55,31 @@
 #### Verify Connectivity
 - Using curl http://"URL of the Listener of your ND"/contextio_hook/helloworld
 -  the response should be similar to the below, listing your user details:  
-    ``` [
-            {
-                "created": 1426733556,
-                "email_accounts": [
-                    {
-                        "authentication_type": "password",
-                        "label": "paulpog@japarasolutions.com::googleapps",
-                        "port": 993,
-                        "resource_url": "https://api.context.io/lite/users/550a39f5894615ab04d6f6db/email_accounts/paulpog%40japarasolutions.com%3A%3Agoogleapps",
-                        "server": "imap.gmail.com",
-                        "status": "OK",
-                        "type": "imap",
-                        "use_ssl": true,
-                        "username": "paulpog@japarasolutions.com"
-                    }
-                ],
-                "email_addresses": [
-                    "paul.pogonoski@akana.com"
-                ],
-                "first_name": "Paul",
-                "id": "550a39f5894615ab04d6f6db",
-                "last_name": "Pogonoski",
-                "resource_url": "https://api.context.io/lite/users/550a39f5894615ab04d6f6db"
-            }
-        ] ```
+    [
+        {
+            "created": 1426733556,
+            "email_accounts": [
+                {
+                    "authentication_type": "password",
+                    "label": "paulpog@japarasolutions.com::googleapps",
+                    "port": 993,
+                    "resource_url": "https://api.context.io/lite/users/550a39f5894615ab04d6f6db/email_accounts/paulpog%40japarasolutions.com%3A%3Agoogleapps",
+                    "server": "imap.gmail.com",
+                    "status": "OK",
+                    "type": "imap",
+                    "use_ssl": true,
+                    "username": "paulpog@japarasolutions.com"
+                }
+            ],
+            "email_addresses": [
+                "paul.pogonoski@akana.com"
+            ],
+            "first_name": "Paul",
+            "id": "550a39f5894615ab04d6f6db",
+            "last_name": "Pogonoski",
+            "resource_url": "https://api.context.io/lite/users/550a39f5894615ab04d6f6db"
+        }
+    ]
 
 ### How Hello World Works
 #### An Akana Integration Primer
