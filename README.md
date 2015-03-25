@@ -81,7 +81,6 @@
             }
         ]```
 
-
 ### How Hello World Works
 #### An Akana Integration Primer
 The Google_Sheets_API_Hook API is a "Virtual Service". That is, its interface is not that of a real service implementation. It can be a proxy to a "real" implementation, or it can be an aggregate (a combination) of a number of "real" implementations. In Policy Manager a "real" implementation is called a "Physical Service".
