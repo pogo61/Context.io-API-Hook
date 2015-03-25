@@ -111,7 +111,7 @@ Double click on the invoke activity to see how these work to make the Hello Worl
 
 ### Create Your Own Integration with the Context.io API
 The Hello World operation is one simple way of integrating or extending your API's.
-Take a look at the [Google Sheets API Integration](https://github.com/pogo61/Google-Sheets-API-Integration).
+Take a look at the [Context.io API Integration](https://github.com/pogo61/Context.io-API-Integration).
 this will give you a deeper inderstanding of the richness of our gateway product in integrating to API's    
 
 ### Modify and Build
