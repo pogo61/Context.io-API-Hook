@@ -1,0 +1,1064 @@
+#%RAML 0.8
+title: context.io API Hook
+version: 1.0
+baseUri: https://api.context.io/lite
+securedBy: [oauth_2_0]
+securitySchemes: 
+    - 
+        "oauth_2_0": 
+            description: |
+                Dropbox supports OAuth 2.0 for authenticating all API requests.
+            type: "OAuth 2.0"
+            describedBy: 
+                headers: 
+                    "Authorization": 
+                        description: |
+                            Used to send a valid OAuth 2 access token. Do not use
+                            with the "access_token" query string parameter.
+                        type: string
+                        required: false
+                        repeat: false
+                queryParameters: 
+                    "access_token": 
+                        description: |
+                            Used to send a valid OAuth 2 access token. Do not use together with
+                            the "Authorization" header
+                        type: string
+                        required: false
+                        repeat: false
+                responses: 
+                    "401": 
+                        description: |
+                            Bad or expired token. This can happen if the user or Dropbox
+                            revoked or expired an access token. To fix, you should re-
+                            authenticate the user.
+                    "403": 
+                        description: |
+                            Bad OAuth request (wrong consumer key, bad nonce, expired
+                            imestamp...). Unfortunately, re-authenticating the user won't help here.
+            settings: 
+                authorizationUri: "https://accounts.google.com/o/oauth2/auth"
+                accessTokenUri: "https://www.googleapis.com/oauth2/v3/token"
+                
+/users:
+  get:
+    description: <<get a list of users>>
+    queryParameters: 
+        "email": 
+          description: Only return users associated with this email address
+          type: string
+          required: false
+        "status": 
+          description: Only return users with email accounts with the specified status.  If a user has many email accounts, only those matching the given value will be included in the response. Possible statuses are:- INVALID_CREDENTIALS, CONNECTION_IMPOSSIBLE, OK, TEMP_DISABLED and DISABLED
+          type: string
+          required: false
+        "status_ok": 
+          description: Set to 0 to get all users with email accounts that are not working correctly. Set to 1 for the opposite. As for the status filter above, only email accounts matching the specific value are included in the response
+          type: integer
+          required: false
+        "limit": 
+          description: The maximum number of results to return. The maximum limit is 250.
+          type: integer
+          required: false
+        "offset": 
+          description: Start the list at this offset (zero-based).
+          type: integer
+          required: false
+    responses: 
+      "200": 
+        body: 
+          "application/json": 
+            example: |
+              [
+                {
+                  "id": stringID of the user,
+                  "username": stringUsername assigned to the user,
+                  "created": numberUnix timestamp of user creation time,
+                  "suspended": numberUnix timestamp of user suspension time 0 means not suspended,
+                  "email_addresses": arrayArray of email addresses for this user,
+                  "first_name": stringFirst name of user,
+                  "last_name": stringLast name of user,
+                  "password_expired": numberUnix timestamp of user's password expiration. 0 means still valid,
+                  "email_accounts": arrayList of email accounts where this user gets data from. See email_accounts for details
+                  "resource_url": stringThe URL of the user list resource,
+                },
+                ...
+              ]
+  post:
+    description: <<Add a new user. The POST call to create a user also accepts all parameters used to create a email account.
+     Beyond the convenience of doing both operation in a single call, this has the advantage of making error handling easier. If the email account parameters aren't valid or don't map to an existing and accessible mailbox, the user isn't created and this call fails.>>
+    queryParameters: 
+        "migrate_account_id": 
+          description: Existing account_id you want to migrate to lite. Either migrate_account_id or email must be specified
+          type: string
+          required: false
+        "email": 
+          description: The primary email address of the user. Either email or migrate_account_id must be specified
+          type: string
+          required: false
+        "first_name": 
+          description: First name of the user
+          type: string
+          required: false
+        "last_name": 
+          description: Last name of the user
+          type: string
+          required: false
+        "server": 
+          description: The DNS name or IP of the email server, eg. imap.gmail.com. See creating a user and an email account in a single call for details
+          type: string
+          required: false
+        "username": 
+          description: The username used to authenticate the email account. On some servers, this is the same as the primary email address. See creating a user and an email account in a single call for details
+          type: string
+          required: false
+        "use_ssl": 
+          description: Set to 1 if you want SSL encryption to be used when opening connections to the server. Any other value will be considered as "do not use SSL". See creating a user and an email account in a single call for details.
+          type: integer
+          required: false
+        "port": 
+          description: Port number to connect to on the server. Keep in mind that most email servers will have one port for standard connection and another one for encrypted connection (see use_ssl parameter above). See creating a user and an email account in a single call for details
+          type: integer
+          required: false
+        "type": 
+          description: The email protocol to use for the account. Valid values are IMAP and exchange. See creating a user and an email account in a single call for details
+          type: string
+          required: false
+        "password": 
+          description: Password for authentication on the email server. Ignored if any of the provider_* parameters are set below. See creating a user and an email account in a single call for details
+          type: string
+          required: false
+        "provider_refresh_token": 
+          description: An OAuth2 refresh token obtained from the email account provider to be used to authenticate this email account. See creating a user and an email account in a single call for details
+          type: string
+          required: false
+        "provider_token": 
+          description: An OAuth1 token obtained from the email account provider to be used to authenticate this email account. See creating a user and an email account in a single call for details
+          type: string
+          required: false
+        "provider_token_secret": 
+          description: An OAuth1 token secret obtained from the email account provider to be used to authenticate this email account.. See creating a user and an email account in a single call for details
+          type: string
+          required: false
+        "provider_consumer_key": 
+          description: The OAuth2 Client ID or OAuth1 consumer key used to obtain the the token and token secret above for that email account. That consumer key and secret must be configured in your Context.IO user, see creating a user and an email account in a single call for details
+          type: string
+          required: false
+    responses: 
+      "200": 
+        body: 
+          "application/json": 
+            example: |
+              {
+                "success": booleantrue if user has been created (HTTP status 201), false on error,
+                "id": stringId of the user that has been created,
+                "resource_url": stringFull URI of resource created
+                "email_account": {
+                  "label":stringLabel of the email account that has been created,
+                  "resource_url":stringFull URI of the email account created for the user
+                }
+                  If your key uses 3-legged signatures, the following 2 properties are added:-
+                "access_token": stringOAuth access token to sign all future requests on this newly created user,
+                "access_token_secret": stringOAuth access token secret to sign all future requests on this newly created user
+              }
+  /{id}:
+    get:
+      description: <<Get Details about a given user. {id} is the Unique id of a user accessible through your API key>>
+      responses: 
+        "200": 
+          body: 
+            "application/json": 
+              example: |
+                {
+                  "id": stringID of the user,
+                  "username": stringUsername assigned to the user,
+                  "created": numberUnix timestamp of user creation time,
+                  "suspended": numberUnix timestamp of user suspension time 0 means not suspended,
+                  "email_addresses": arrayArray of email addresses for this user,
+                  "first_name": stringFirst name of user,
+                  "last_name": stringLast name of user,
+                  "password_expired": numberUnix timestamp of user's password expiration. 0 means still valid,
+                  "email_accounts": arrayList of email accounts where this user gets data from. See email_accounts for details,
+                  "resource_url": stringThe URL of the user resource,
+                }  
+    delete:
+      description: <<Remove a given user>>
+    post:
+      description: <<Modify a given user>>
+      queryParameters: 
+        "first_name": 
+          description: First name of the user
+          type: string
+          required: false
+        "last_name": 
+          description: Last name of the user
+          type: string
+          required: false
+      responses: 
+        "200": 
+          body: 
+            "application/json": 
+              example: |
+                {
+                  "success": booleantrue if user has been updated, false on error,
+                  "resource_url": stringThe URL of the updated user resource,
+                }
+    /connect_tokens:
+      get:
+        description: <<List of connect tokens created for a user>>
+        responses: 
+          "200": 
+            body: 
+              "application/json": 
+                example: |
+                  [
+                    {
+                      "token": stringID of the connect token,
+                      "email": stringemail address specified on token creation,
+                      "created": numberUnix timestamp of the connect token was created,
+                      "used": numberUnix time of when this token was used. 0 means no user has been created with this token yet,
+                      "expires": mixedUnix time this token will expire and be purged. Once the token is used, this property will be set to false,
+                      "callback_url": stringURL we'll redirect the browser to after the user is created,
+                      "first_name": stringFirst name specified on token creation. Defaults to first_name of the user,
+                      "last_name": stringLast name specified on token creation. Defaults to the last_name of the user,
+                      "user": {
+                        If the connect token hasn't been used yet, this object will be empty
+                        "id": stringID of the user created with this token,
+                        "created": numberUnix timestamp of user creation time,
+                        "email_addresses":arrayArray of email addresses for this user. This only lists the actual addresses as strings.,
+                        "first_name": stringFirst name of user,
+                        "last_name": stringLast name of user,
+                        "email_accounts": arrayList of email accounts this user gets data from. See email_accounts
+                      },
+                      "account_lite": booleantrue if the account is a Lite account,
+                      "resource_url": stringThe URL of the connect token,
+                      "browser_redirect_url": stringRedirect the user's browser to this URL to have them connect their mailbox through this token,
+                      "serverLabel": stringThe label for the created account,
+                    },
+                    ...
+                  ]
+      post:
+        description: <<Obtain a new connect_token for a specific user>>
+        queryParameters: 
+          "callback_url": 
+            description: When the user's mailbox is connected to your API key, the browser will call this url (GET). This call will have a parameter called contextio_token indicating the connect_token related to this callback. You can then do a get on this connect_token to obtain details about the user and email account created through that token.
+            type: string
+            required: true
+          "email": 
+            description: The email address of the user to be added. If specified, the user will not be prompted to enter their email address, first name and last name.
+            type: string
+            required: false
+          "first_name": 
+            description: First name of the user
+            type: string
+            required: false
+          "last_name": 
+            description: Last name of the user
+            type: string
+            required: false
+        responses: 
+          "200": 
+            body: 
+              "application/json": 
+                example: |
+                  {
+                    "success": string true if connect_token was successfully created, false otherwise,
+                    "token": stringID of the token,
+                    "resource_url": stringURL of the token,
+                    "browser_redirect_url": stringRedirect the user's browser to this URL to have them connect their mailbox through this token
+                  }
+      /{token}:
+        get:
+          description: <<Information about a given connect token. {token} is the unique random token used to add a second email account to an existing user>>
+          responses: 
+            "200": 
+              body: 
+                "application/json": 
+                  example: |
+                    {
+                      "token": stringID of the connect token,
+                      "email": stringemail address specified on token creation,
+                      "created": numberUnix timestamp of the connect token was created,
+                      "used": numberUnix time this token was been used. 0 means no user has been created with this token yet,
+                      "expires": mixedUnix time this token will expire and be purged. Once the token is used, this property will be set to false,
+                      "callback_url": stringURL we'll redirect the browser to after the user is created,
+                      "first_name": stringFirst name specified on token creation. Defaults to first_name of the user,
+                      "last_name": stringLast name specified on token creation. Defaults to the last_name of the user,
+                      "user": {
+                        If the connect token hasn't been used yet, this object will be empty
+                        "id": stringID of the user created with this token,
+                        "created": numberUnix timestamp of user creation time,
+                        "email_addresses":arrayArray of email addresses for this user. This only lists the actual addresses as strings.,
+                        "first_name": stringFirst name of user,
+                        "last_name": stringLast name of user,
+                        "email_accounts": arrayList of email accounts this user gets data from. See email_accounts
+                      },
+                      "account_lite": booleantrue if the account is a Lite account,
+                      "resource_url": stringThe URL of the connect token
+                      "browser_redirect_url": stringRedirect the user's browser to this URL to have them connect their mailbox through this token
+                    }
+        delete:
+          description: <<Remove a given connect token>>
+    /email_accounts:
+      description: Context.IO supports OAuth authentication when adding a Gmail/Google Apps or Microsoft Outlook.com users as a email account. To use it, you first need to configure the OAuth consumer key you obtained from Google and Microsoft as an OAuth provider. Then, when adding email accounts to users in Context.IO set the provider_consumer_key and, for OAuth1, provider_token and provider_token_secret, and for OAuth2 provider_refresh_token, instead of the password.
+      get:
+        description: <<List of email accounts assigned to a user>>
+        queryParameters: 
+          "status": 
+            description: Only return email accounts whose status is of a specific value. Possible statuses are:- INVALID_CREDENTIALS, CONNECTION_IMPOSSIBLE, OK, TEMP_DISABLED and DISABLED
+            type: string
+            required: false
+          "status_ok": 
+            description: Set to 0 to get email accounts that are not working correctly. Set to 1 to get those that are.
+            type: string
+            required: false
+        responses: 
+          "200": 
+            body: 
+              "application/json": 
+                example: |
+                  [
+                    {
+                      "status": stringThe connection status, one of OK, CONNECTION_IMPOSSIBLE, INVALID_CREDENTIALS, TEMP_DISABLED, DISABLED,
+                      "resource_url": stringThe URL of the email account resource,
+                      "type": stringThe type of account, either IMAP or exchange,
+                      "authentication_type": stringThe type of credentials used to connect, one of password, oauth,
+                      "use_ssl": booleanSet to _1_ if you want SSL encryption to be used when opening connections to the email server,
+                      "server": stringThe DNS name or IP of the email server, eg. imap.gmail.com,
+                      "label": stringThe ID of the account.  Context.IO assigns a label to every email account.,
+                      "username": stringUsername assigned to the email account,
+                      "port": numberPort number to connect to on the server,
+                    },
+                    ...
+                  ]
+      post:
+        description: <<Add a mailbox to a given user>>
+        queryParameters: 
+          "email": 
+            description: The primary email address for this account
+            type: string
+            required: true
+          "server": 
+            description: The DNS name or IP of the email server, eg. imap.gmail.com
+            type: string
+            required: true
+          "username": 
+            description: The username used to authenticate the email account. On some servers, this is the same as the primary email address.
+            type: string
+            required: true
+          "use_ssl": 
+            description: Set to 1 if you want SSL encryption to be used when opening connections to the email server. Any other value will be considered as "do not use SSL"
+            type: integer
+            required: true
+          "port": 
+            description: Port number to connect to on the server. Keep in mind that most email servers will have one port for standard connection and another one for encrypted connection (see use_ssl parameter above)
+            type: integer
+            required: true
+          "type": 
+            description: The email protocol to use for the account. Valid values are IMAP and exchange
+            type: string
+            required: true
+          "password": 
+            description: Password for authentication on the email server. Ignored if any of the provider_* parameters are set below.
+            type: string
+            required: false
+          "provider_refresh_token": 
+            description: An OAuth2 refresh token obtained from the email account provider to be used to authenticate this email account.
+            type: string
+            required: false
+          "provider_token": 
+            description: An OAuth1 token obtained from the email account provider to be used to authenticate this email account.
+            type: string
+            required: false
+          "provider_token_secret": 
+            description: An OAuth1 token secret obtained from the email account provider to be used to authenticate this email account.
+            type: string
+            required: false
+          "provider_consumer_key": 
+            description: The OAuth2 Client ID or OAuth1 consumer key used to obtain the the token and token secret above for that email account. That consumer key and secret must be configured in your Context.IO user, see oauth_providers
+            type: string
+            required: false
+        responses: 
+          "200": 
+            body: 
+              "application/json": 
+                example: |
+                  {
+                    "status": stringThe connection status, one of OK, CONNECTION_IMPOSSIBLE, INVALID_CREDENTIALS, TEMP_DISABLED, DISABLED,
+                    "label": stringThe ID of the account.  Context.IO assigns a label to every email account,
+                    "resource_url": stringThe URL of the email account resource,
+                  }
+      /{label}:
+        get:
+          description: <<Parameters and status for an email account. {label} property of the email account instance. You can use 0 as an alias for the first email account of a user.>>
+          responses: 
+            "200": 
+              body: 
+                "application/json": 
+                  example: |
+                    {
+                      "status": stringThe connection status, one of OK, CONNECTION_IMPOSSIBLE, INVALID_CREDENTIALS, TEMP_DISABLED, DISABLED,
+                      "resource_url": stringThe URL of the email account resource,
+                      "type": stringThe type of account, either IMAP or exchange,
+                      "authentication_type": stringThe type of credentials used to connect, one of password, oauth,
+                      "use_ssl": booleanSet to _1_ if you want SSL encryption to be used when opening connections to the email server,
+                      "server": stringThe DNS name or IP of the email server, eg. imap.gmail.com,
+                      "label": stringThe ID of the account.  Context.IO assigns a label to every email account.,
+                      "username": stringUsername assigned to the email account,
+                      "port": numberPort number to connect to on the server,
+                    }
+        post:
+          description: <<Modify an email account on a given user>>
+          queryParameters: 
+            "status": 
+              description: If the status of the email account is TEMP_DISABLED or DISABLED. You can do a POST/PUT with status set to 1 to reset it.
+              type: integer
+              required: false
+            "force_status_check": 
+              description: Set to 1 to create a connection and reset the email account status to to one reported by the backend. Don't combine this with other parameters.
+              required: false
+            "password": 
+              description: New password for this email account. Ignored if any of the provider_* parameters are set below.
+              type: string
+              required: false
+            "provider_refresh_token": 
+              description: An OAuth2 refresh token obtained from the email account provider to be used to authenticate this email account.
+              type: string
+              required: false
+            "provider_token": 
+              description: An OAuth1 token obtained from the email account provider to be used to authenticate this email account.
+              type: string
+              required: false
+            "provider_token_secret": 
+              description: An OAuth1 token secret obtained from the email account provider to be used to authenticate this email account.
+              type: string
+              required: false
+            "provider_consumer_key": 
+              description: The OAuth2 Client ID or OAuth1 consumer key used to obtain the the token and token secret above for that email account. That consumer key and secret must be configured in your Context.IO user, see oauth_providers
+              type: string
+              required: false
+          responses: 
+            "200": 
+              body: 
+                "application/json": 
+                  example: |
+                    {
+                      "success": booleantrue if the update was successful,
+                      "resource_url": stringThe URL of the email account resource,
+                      "feedback_code": stringA description of the failure,
+                    }
+        delete:
+          description: <<Delete an email account of a user>>
+        /folders:
+          get:
+            description: <<List folders in an email account>>
+            queryParameters: 
+              "include_names_only": 
+                description: Set to 1 to return only folder names and no status information.
+                type: string
+                required: false
+            responses: 
+              "200": 
+                body: 
+                  "application/json": 
+                    example: |
+                      [
+                        {
+                          "name": stringName of the folder,
+                          "symbolic_name": stringIf the email server supports special-use mailboxes (see RFC 6154) or XLIST, this property exposes the special attribute (Not present if no value),
+                          "nb_messages": numberNumber of messages that exist in this folder (not returned when include_names_only=1),
+                          "nb_unseen_messages": numberNumber of unread messages in this folder (not returned when include_names_only=1),
+                          "delimiter": stringCharacter used to delimit hierarchy in the folder name, ie /
+                          "resource_url": stringThe URL of the folder list resource,
+                        },
+                        ...
+                      ]
+          /{folder}:
+            get:
+              description: <<Returns information about a given folder. {folder} is the full folder path using / as the path hierarchy delimiter.>>
+              queryParameters: 
+                "delimiter": 
+                  description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                  type: string
+                  required: false
+              responses: 
+                "200": 
+                  body: 
+                    "application/json": 
+                      example: |
+                        {
+                          "name": stringName of the folder, 
+                          "symbolic_name": stringIf the email server supports special-use mailboxes (see RFC 6154) or XLIST, this property exposes the special attribute (Not present if not known),
+                          "nb_messages": numberNumber of messages that exist in this folder,
+                          "nb_unseen_messages": numberNumber of unread messages in this folder,
+                          "delimiter": stringCharacter used to delimit hierarchy in the folder name
+                          "resource_url": stringThe URL of the folder resource,
+                        }
+            /messages:
+              get:
+                description: <<Listings of email messages for a user>>
+                queryParameters: 
+                  "delimiter": 
+                    description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                    type: string
+                    required: false
+                  "include_body": 
+                    description: Set to 1 to include message bodies in the result.
+                    type: integer
+                    required: false
+                  "body_type": 
+                    description: Used when include_body is set to get only body parts of a given MIME-type (for example text/html)
+                    type: string
+                    required: false
+                  "include_headers": 
+                    description: Can be set to 0 (default), 1 or raw. If set to 1, complete message headers, parsed into an array, are included in the results. If set to raw, the headers are included as a raw unparsed string.
+                    type: string
+                    required: false
+                  "include_flags": 
+                    description: Set to 1 to include flags for this message in the result.
+                    type: integer
+                    required: false
+                  "limit": 
+                    description: The maximum number of results to return. The maximum limit is 100.
+                    type: integer
+                    required: false
+                  "offset": 
+                    description: Start the list at this offset (zero-based).
+                    type: integer
+                    required: false
+                responses: 
+                  "200": 
+                    body: 
+                      "application/json": 
+                        example: |
+                          [
+                            {
+                              "sent_at": numberUnix timestamp of message's DATE header. Since this is set by the sender, it might be wrong.,
+                              "received_at": numberUnix timestamp of the message's most recent RECEIVED header. Since this is set by the user's email server, it is usually more accurate than sent_at. (Not implemented),
+                              "addresses": objectEmail addresses and names of sender and recipients (more details),
+                              "person_info": objectAdditional info about contacts on this message (more details),
+                              "email_message_id": stringValue of RFC-822 Message-ID header,
+                              "attachments": [
+                                {
+                                  "size": numberSize of file in bytes.,
+                                  "type": stringMIME type as specified in message source,
+                                  "file_name": stringName of file,
+                                  "body_section": stringMIME section this file can be found in (useful only if you're parsing raw source),
+                                  "content_disposition": stringValue of the Content-Disposition header of the MIME part containing this file, if specified. Typically 'inline' or 'attachment',
+                                  "email_message_id": stringValue of RFC-822 Message-ID header this file is attached to,
+                                  "attachment_id": numberThe index of the attachment. Used for retrieving the actual file
+                                },
+                                ...
+                              ],
+                              "subject": stringSubject of the message,
+                              "folders": arrayList of folders (or Gmail labels) this message is found in,
+                              "message_id": stringThe Message ID - use this value to construct message instance URL's,
+                              "list_headers": arrayHeaders starting with List- (Why are we returning this?  Not implemented in Exchange),
+                              "in_reply_to": stringThe 'In-Reply-To' header value.  (Why? Not implemented in Exchange),
+                              "references": arrayThe 'References' header value.  (Why? Not implemented in Exchange),
+                              "received_headers": arrayThe 'Received' header values (Why? Not implemented in Exchange),
+                              "resource_url": stringThe URL of the message list resource,
+                            },
+                            ...
+                          ]
+              /{message_id}:
+                get:
+                  description: <<File, contact and other information about a given email message. {message_id} is Unique id of a message. This must be a email_message_id of an existing message in the thread. The < and > at the beginning and end of the Message-ID are part of the value and should be included if you're putting an email_message_id in the url.>>
+                  queryParameters: 
+                    "delimiter": 
+                      description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                      type: string
+                      required: false
+                    "include_body": 
+                      description: Set to 1 to include message bodies in the result.
+                      type: integer
+                      required: false
+                    "include_headers": 
+                      description: Can be set to 0 (default), 1 or raw. If set to 1, complete message headers, parsed into an array, are included in the results. If set to raw, the headers are included as a raw unparsed string.
+                      type: string
+                      required: false
+                    "include_flags": 
+                      description: Set to 1 to include flags for this message in the result.
+                      type: integer
+                      required: false
+                    "body_type": 
+                      description: Used when include_body is set to get only body parts of a given MIME-type (for example text/html)
+                      type: string
+                      required: false
+                  responses: 
+                    "200": 
+                      body: 
+                        "application/json": 
+                          example: |
+                            {
+                              "sent_at": numberUnix timestamp of message's DATE header. Since this is set by the sender, it might be wrong.,
+                              "received_at": numberUnix timestamp of the message's most recent RECEIVED header. Since this is set by the user's email server, it is usually more accurate than sent_at. (Not implemented),
+                              "addresses": objectEmail addresses and names of sender and recipients (more details),
+                              "person_info": objectAdditional info about contacts on this message (more details),
+                              "email_message_id": stringValue of RFC-822 Message-ID header,
+                              "attachments": [
+                                {
+                                  "size": numberSize of file in bytes.,
+                                  "type": stringMIME type as specified in message source,
+                                  "file_name": stringName of file,
+                                  "body_section": stringMIME section this file can be found in (useful only if you're parsing raw source),
+                                  "content_disposition": stringValue of the Content-Disposition header of the MIME part containing this file, if specified. Typically 'inline' or 'attachment',
+                                  "email_message_id": stringValue of RFC-822 Message-ID header this file is attached to,
+                                  "attachment_id": numberThe index of the attachment. Used for retrieving the actual file
+                                },
+                                ...
+                              ],
+                              "subject": stringSubject of the message,
+                              "folders": arrayList of folders (or Gmail labels) this message is found in,
+                              "message_id": stringThe Message ID - use this value to construct message instance URL's,
+                              "list_headers": arrayHeaders starting with List- (Why are we returning this?  Not implemented in Exchange),
+                              "in_reply_to": stringThe 'In-Reply-To' header value.  (Why? Not implemented in Exchange),
+                              "references": arrayThe 'References' header value.  (Why? Not implemented in Exchange),
+                              "received_headers": arrayThe 'Received' header values (Why? Not implemented in Exchange),
+                              "resource_url": stringThe URL of the message list resource,
+                            }
+                /attachments:
+                  get:
+                    description: <<Listings of email messages for a user>>
+                    queryParameters: 
+                      "delimiter": 
+                        description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                        type: string
+                        required: false
+                    responses: 
+                      "200": 
+                        body: 
+                          "application/json": 
+                            example: |
+                              [
+                                {
+                                  "size": numberSize of file in bytes.,
+                                  "type": stringMIME type as specified in message source, ie text/html,
+                                  "file_name": stringName of file,
+                                  "body_section": stringMIME section this file can be found in (useful if you're parsing raw source),
+                                  "content_disposition": stringValue of the Content-Disposition header of the MIME part containing this file, if specified. Typically 'inline' or 'attachment',
+                                  "email_message_id": stringValue of RFC-822 Message-ID header this file is attached to,
+                                  "attachment_id": numberThe index of the attachment. Used for retrieving the actual file (see below)
+                                },
+                                ...
+                              ]
+                  /{attachment_id}:
+                    get:
+                      description: <<Retrieve an email attachment. {attachment_id} is the index of the file attachment.>>
+                      queryParameters: 
+                        "delimiter": 
+                          description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                          type: string
+                          required: false
+                      responses: 
+                        "200": 
+                          body: 
+                           multipart/form-data: 
+                              example: |
+                                (the requested file)
+                /body:
+                  get:
+                    description: <<Listings of email messages for a user>>
+                    queryParameters: 
+                      "delimiter": 
+                        description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                        type: string
+                        required: false
+                      "type": 
+                        description: Many emails are sent with both rich text and plain text versions in the message body and by default, the response of this call will include both. It is possible to only get either the plain or rich text version by setting the type parameter to text/plain or text/html respectively.
+                        type: string
+                        required: false
+                    responses: 
+                      "200": 
+                        body: 
+                          "application/json": 
+                            example: |
+                              [
+                                {
+                                  "type": stringMIME type of message part being fetched,
+                                  "charset": stringencoding of the characters in the part of message,
+                                  "content": stringthe actual content of the message part being pulled,
+                                  "body_section": stringindicating position of the part in the body structure,
+                                }
+                              ]
+                /flags:
+                  get:
+                    description: <<Message flags>>
+                    queryParameters: 
+                      "delimiter": 
+                        description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                        type: string
+                        required: false
+                    responses: 
+                      "200": 
+                        body: 
+                          "application/json": 
+                            example: |
+                              {
+                                "resource_url": stringFull URI of the resource,
+                                "flags": {
+                                  "read": booleanwhether or not a message has been viewed,
+                                  "answered": booleanwhether or not a message has been replied to,
+                                  "flagged": booleanwhether or not a message has been flagged or marked important,
+                                  "draft": booleanwhether or not a message is in draft mode
+                                }
+                              }
+                /headers:
+                  get:
+                    description: <<Complete headers of a given email message>>
+                    queryParameters: 
+                      "delimiter": 
+                        description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                        type: string
+                        required: false
+                      "raw": 
+                        description: By default, this returns messages headers parsed into an object. Set this parameter to 1 to get raw unparsed headers.
+                        type: integer
+                        required: false
+                    responses: 
+                      "200": 
+                        body: 
+                          "application/json": 
+                            example: |
+                              {
+                                "resource_url": stringFull URI of the resource,
+                                "headers": {
+                                  Name-Of-Header: arrayValues for that header (some headers can appear more than once in the message source),
+                                  ...
+                                }
+                              }
+                /raw:
+                  get:
+                    description: <<Fetch the raw message>>
+                    queryParameters: 
+                      "delimiter": 
+                        description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                        type: string
+                        required: false
+                    responses: 
+                      "200": 
+                        body: 
+                          "application/form-data": 
+                            example: |
+                              (the requested RFC-822 message)
+                /read:
+                  post:
+                    description: <<Mark the message as read>>
+                    queryParameters: 
+                      "delimiter": 
+                        description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                        type: string
+                        required: false
+                    responses: 
+                      "200": 
+                        body: 
+                          "application/json": 
+                            example: |
+                              {
+                                "success": booleantrue if message has been marked as read (HTTP status 200), false on error
+                              }
+                  delete:
+                    description: <<Mark the message as unread>
+                    queryParameters: 
+                      "delimiter": 
+                        description: If / isn't fancy enough as a hierarchy delimiter when specifying the folder you want to obtain, you're free to use what you want, just make sure you set this delimiter parameter to tell us what you're using.
+                        type: string
+                        required: false
+                    responses: 
+                      "200": 
+                        body: 
+                          "application/json": 
+                            example: |
+                              {
+                                "success": booleantrue if message has been marked as read (HTTP status 200), false on error
+                              }
+    /webhooks:
+      get:
+        description: <<Listing of WebHook configured for a user>>
+        responses: 
+          "200": 
+            body: 
+              "application/json": 
+                example: |
+                  [
+                    {
+                      "callback_url": stringYour callback URL to which we'll POST message data,
+                      "failure_notif_url": stringYour callback URL for failure notifications,
+                      "active": booleanWhether this webhook is currently applied to new messages we find in the user or not,
+                      "failure": booleantrue means we had issues connecting to the user and gave up after a couple retries. The failure_notif_url is called when a webhook's failure property becomes true.,
+                      "webhook_id": stringId of the webhook,
+                      "resource_url": stringComplete URL of the webhook,
+                      filter_*: stringValue of a filter assigned to this webhook when created,
+                      ...
+                    },
+                    ...
+                  ]
+      post:
+        description: <<Create a new WebHook on a user>>
+        queryParameters: 
+          "callback_url": 
+            description: A valid URL Context.IO calls when a matching message is found.The callback URL is called with an HTTP POST with message information in request body, see receiving webhook callbacks.(https://context.io/docs/lite/users/webhooks#callbacks)
+            type: string
+            required: true
+          "failure_notif_url": 
+            description: A valid URL Context.IO calls if the WebHooks fails and will no longer be active. That may happen if, for example, the server becomes unreachable or if it closes an IDLE connection and we can't re-establish it. The callback URL is called with an HTTP POST with more information in request body, see receiving failure notifications. (https://context.io/docs/lite/users/webhooks#failure-notif)
+            type: string
+            required: true
+          "filter_to": 
+            description: Check for new messages sent to a given name or email address. Also accepts a comma delimited list of email addresses.            
+            type: string
+            required: false
+          "filter_from": 
+            description: Check for new messages received from a given name or email address. Also accepts a comma delimited list of email addresses.
+            type: string
+            required: false
+          "filter_cc": 
+            description: Check for new messages where a given name or email address is cc'ed. Also accepts a comma delimited list of email addresses.
+            type: string
+            required: true
+          "filter_subject": 
+            description: Check for new messages with a subject matching a given string or regular expression
+            type: string
+            required: true
+          "filter_thread": 
+            description: Check for new messages in a given thread. Value must be a email_message_id of an existing message currently in the thread.
+            type: string
+            required: false
+          "filter_new_important": 
+            description: Check for new messages automatically tagged as important by the Gmail Priority Inbox algorithm. To trace all messages marked as important (including those manually set by the user), use filter_folder_added with value \Important. Note the leading back-slash character in the value, it is required to keep this specific to Gmail Priority Inbox. Otherwise any message placed in a folder called "Important" would trigger the WebHook.
+            type: string
+            required: false
+          "filter_file_name": 
+            description: Check for new messages where a file whose name matches the given string is attached. You can filter names using typical shell wildcards such as *, ? and [] or regular expressions by enclosing the search expression in a leading / and trailing /. For example, *.pdf would give you all PDF files while /\.jpe?g$/ would return all files whose name ends with .jpg or .jpeg
+            type: string
+            required: false
+          "filter_folder_added": 
+            description: Check for messages filed in a given folder. On Gmail, this is equivalent to having a label applied to a message. The value should be the complete name (including parents if applicable) of the folder you want to track.
+            type: string
+            required: false
+          "filter_to_domain": 
+            description: Check for new messages sent to a given domain. Also accepts a comma delimited list of domains.
+            type: string
+            required: false
+          "filter_from_domain": 
+            description: Check for new messages sent from a given domain. Also accepts a comma delimited list of domains.
+            type: string
+            required: false
+        responses: 
+          "200": 
+            body: 
+              "application/json": 
+                example: |
+                  {
+                    "success": booleanWhether the operation worked,
+                    "webhook_id": stringId of the webhook that has been created,
+                    "resource_url": stringComplete URL of the new webhook,
+                  }
+/connect_tokens:
+  get:
+    description: <<List of connect tokens created with your API key>>
+    responses: 
+      "200": 
+        body: 
+          "application/json": 
+            example: |
+              [
+                {
+                  "token": stringID of the connect token,
+                  "email": stringemail address specified on token creation,
+                  "created": numberUnix timestamp of the connect token was created,
+                  "used": numberUnix time of when this token was used. 0 means no user has been created with this token yet,
+                  "expires": mixedUnix time this token will expire and be purged. Once the token is used, this property will be set to false,
+                  "callback_url": stringURL we'll redirect the browser to after the user is created,
+                  "first_name": stringFirst name specified on token creation. Defaults to first_name of the user,
+                  "last_name": stringLast name specified on token creation. Defaults to the last_name of the user,
+                  "user": {
+                    If the connect token hasn't been used yet, this object will be empty
+                    "id": stringID of the user created with this token,
+                    "created": numberUnix timestamp of user creation time,
+                    "email_addresses":arrayArray of email addresses for this user. This only lists the actual addresses as strings.,
+                    "first_name": stringFirst name of user,
+                    "last_name": stringLast name of user,
+                    "email_accounts": arrayList of email accounts this user gets data from. See email_accounts
+                  },
+                  "account_lite": booleantrue if the account is a Lite account,
+                  "resource_url": stringThe URL of the connect token,
+                  "browser_redirect_url": stringRedirect the user's browser to this URL to have them connect their mailbox through this token,
+                  "serverLabel": stringThe label for the created account,
+                },
+                ...
+              ]
+  post:
+    description: <<Obtain a new connect_token>>
+    queryParameters: 
+        "callback_url": 
+          description: When the user's mailbox is connected to your API key, the browser will call this url (GET). This call will have a parameter called contextio_token indicating the connect_token related to this callback. You can then do a get on this connect_token to obtain details about the user and email account created through that token and save that user id in your own user data.
+          type: string
+          required: true
+        "email": 
+          description: The primary email address of the user. Either email or migrate_account_id must be specified
+          type: string
+          required: false
+        "first_name": 
+          description: First name of the user
+          type: string
+          required: false
+        "last_name": 
+          description: Last name of the user
+          type: string
+          required: false
+    responses: 
+      "200": 
+        body: 
+          "application/json": 
+            example: |
+              {
+                "success": string true if connect_token was successfully created, false otherwise,
+                "token": stringId of the token,
+                "resource_url": stringURL to of the token,
+                "browser_redirect_url": stringRedirect the user's browser to this URL to have them connect their mailbox through this token
+                If your key uses 3-legged signatures, the following 2 properties are added
+                "access_token": stringOAuth access token to sign all future requests on this newly created connect_token,
+                "access_token_secret": stringOAuth access token secret to sign all future requests on this newly created connect_token
+              }
+  /{token}:
+    get:
+      description: <<Information about a given connect token. {token} is the unique random token used for the graphical user creation process>>
+      responses: 
+        "200": 
+          body: 
+            "application/json": 
+              example: |
+                {
+                  "token": stringID of the connect token,
+                  "email": stringemail address specified on token creation,
+                  "created": numberUnix timestamp of the connect token was created,
+                  "used": numberUnix time this token was been used. 0 means no user has been created with this token yet,
+                  "expires": mixedUnix time this token will expire and be purged. Once the token is used, this property will be set to false,
+                  "callback_url": stringURL we'll redirect the browser to after the user is created,
+                  "first_name": stringFirst name specified on token creation. Defaults to first_name of the user,
+                  "last_name": stringLast name specified on token creation. Defaults to the last_name of the user,
+                  "user": {
+                    If the connect token hasn't been used yet, this object will be empty
+                    "id": stringID of the user created with this token,
+                    "created": numberUnix timestamp of user creation time,
+                    "email_addresses":arrayArray of email addresses for this user. This only lists the actual addresses as strings.,
+                    "first_name": stringFirst name of user,
+                    "last_name": stringLast name of user,
+                    "email_accounts": arrayList of email accounts this user gets data from. See email_accounts
+                    If your key uses 3-legged signatures, the following 2 properties are added
+                    "access_token": stringOAuth access token to sign all future requests on this user,
+                    "access_token_secret": stringOAuth access token secret to sign all future requests on this user
+                  },
+                  "account_lite": booleantrue if the account is a Lite account,
+                  "resource_url": stringThe URL of the connect token
+                  "browser_redirect_url": stringRedirect the user's browser to this URL to have them connect their mailbox through this token,
+                  If the connect token hasn't been used yet, key will not be present
+                  "serverLabel": stringThe label for the created account,
+                }
+    delete:
+      description: <<Remove a given connect token>>
+      responses: 
+        "200": 
+          body: 
+            "application/json": 
+              example: |
+                {
+                  "success": booleanWhether deletion succeeded,
+                }
+/discovery:
+  get:
+    description: <<Attempts to discover connection settings for a given email address>>
+    queryParameters: 
+        "source_type": 
+          description: The type of email account you want to discover settings for. Right now, the only supported email account type is IMAP
+          type: string
+          required: true
+        "email": 
+          description: An email address you want to discover settings for.
+          type: string
+          required: true
+    responses: 
+      "200": 
+        body: 
+          "application/json": 
+            example: |
+              {
+                "email": stringThe email address requested for discovery,
+                "found": booleantrue if settings were found, false otherwise,
+                "type": stringType of provider, (eg. "gmail"),
+                "imap": {
+                  "server": stringfully qualified domain name of the email server,
+                  "username": stringWhat the username should be for authentication,
+                  "port": numberNetwork port email server is listening on,
+                  "use_ssl": booleanWhether that server:port uses SSL encrypted connections,
+                  "oauth": booleantrue if the email server support authentication through OAuth (setting related OAuth consumers)
+                },
+                "documentation": arrayList of documentation pages that may be useful for end-users for this specific email provider
+              }
+/oauth_providers:
+  get:
+    description: <<List of oauth providers configured>>
+    responses: 
+      "200": 
+        body: 
+          "application/json": 
+            example: |
+              [
+                {
+                  "type": stringThe OAuth provider type, ie GOOGLEAPPSMARKETPLACE or GMAIL,
+                  "provider_consumer_key": stringThe OAuth provider consumer key,
+                  "provider_consumer_secret": stringThe OAuth provider consumer secret,
+                  "resource_url": stringThe URL of the OAuth provider resource,
+                },
+                ...
+              ]
+  post:
+    description: <<Add a new OAuth provider>>
+    queryParameters: 
+        "type": 
+          description: Identification of the OAuth provider. Possible values are GMAIL, GMAIL_OAUTH2, GOOGLEAPPSMARKETPLACE and MSLIVECONNECT.
+          type: string
+          required: true
+        "provider_consumer_key": 
+          description: The OAuth2 Client ID or OAuth1 Consumer Key
+          type: string
+          required: true
+        "provider_consumer_secret": 
+          description: The OAuth2 Client Secret or OAuth1 Consumer Secret
+          type: string
+          required: true
+    responses: 
+      "200": 
+        body: 
+          "application/json": 
+            example: |
+              {
+                "success": booleantrue if the oauth provider was successfully created,
+                "provider_consumer_key": stringThe Provider Consumer Key for th OAuth provider,
+                "resource_url": stringThe URL of the OAuth provider resource,
+              }
+  /{key}:
+    get:
+      description: <<Information about a given OAuth provider. {key} is the consumer key for this external OAuth provider>>
+      responses: 
+        "200": 
+          body: 
+            "application/json": 
+              example: |
+                {
+                  "type": stringThe OAuth provider type, ie GOOGLEAPPSMARKETPLACE or GMAIL,
+                  "provider_consumer_key": stringThe OAuth provider consumer key,
+                  "provider_consumer_secret": stringThe OAuth provider consumer secret,
+                  "resource_url": stringThe URL of the OAuth provider resource,
+                }
+    delete:
+      description: <<Remove a given OAuth provider>>
+      responses: 
+        "200": 
+          body: 
+            "application/json": 
+              example: |
+                {
+                  "success": booleanWhether deletion succeeded,
+                }

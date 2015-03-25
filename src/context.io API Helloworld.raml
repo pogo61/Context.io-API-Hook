@@ -1,0 +1,11 @@
+#%RAML 0.8
+title: Context.io Lite API Helloworld
+version: 1.0
+baseUri: http://win7-64-vm:9905/contextio_hook
+/helloworld:
+  get:
+    description: <<returns details about authorised user>>
+    responses:
+      200:
+        body:
+          application/atom+xml:
