@@ -102,7 +102,7 @@ Then the /helloworld Operation in the VS was mapped to the GET /users operation 
 
 Go to the Context.io_Lite_API_Helloworld VS -> Operations Tab -> GET /hellowworld operation -> Process tab you'll see this image:
 ![Helloworld process] 
-(https://github.com/pogo61/Google-Sheets-API-Hook/blob/master/Hello%20World%20Process.png)
+(https://github.com/pogo61/Context.io-API-Hook/blob/master/Screen%20Shot.png)
 
 Double click on the invoke activity to see how these work to make the Hello World operation call successful.
 
