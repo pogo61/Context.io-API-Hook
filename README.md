@@ -79,8 +79,9 @@
             "last_name": "Pogonoski",
             "resource_url": "https://api.context.io/lite/users/550a39f5894615ab04d6f6db"
         }
-    ]```
-    
+    ]
+```
+
 
 ### How Hello World Works
 #### An Akana Integration Primer
