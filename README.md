@@ -55,7 +55,7 @@
 #### Verify Connectivity
 - Using curl http://"URL of the Listener of your ND"/contextio_hook/helloworld
 -  the response should be similar to the below, listing your user details:  
-```    [
+    ```[
         {
             "created": 1426733556,
             "email_accounts": [
@@ -79,7 +79,8 @@
             "last_name": "Pogonoski",
             "resource_url": "https://api.context.io/lite/users/550a39f5894615ab04d6f6db"
         }
-    ] ```
+    ]```
+    
 
 ### How Hello World Works
 #### An Akana Integration Primer
