@@ -56,9 +56,9 @@
 - Using curl http://"URL of the Listener of your ND"/contextio_hook/helloworld
 -  the response should be similar to the below, listing your user details:  
     ```[
-        {
-            "created": 1426733556,
-            "email_accounts": [
+            {
+                "created": 1426733556,
+                "email_accounts": [
                 {
                     "authentication_type": "password",
                     "label": "paulpog@japarasolutions.com::googleapps",
