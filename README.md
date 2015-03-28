@@ -85,7 +85,8 @@
 
 ### How Hello World Works
 #### An Akana Integration Primer
-The Google_Sheets_API_Hook API is a "Virtual Service". That is, its interface is not that of a real service implementation. It can be a proxy to a "real" implementation, or it can be an aggregate (a combination) of a number of "real" implementations. In Policy Manager a "real" implementation is called a "Physical Service".
+The Context.io API  Hook is a "Physical Service". That is, its interface is that of a real service implementation. In Policy Manager a "real" implementation is called a "Physical Service". Physical Services are not usable by anything other than Policy Manager. To call a service you must create a VS, or Virtual Service. a VS can be a proxy to a "real" implementation, or it can be an aggregate (a combination) of a number of "real" implementations.
+
 Apart from offering a different interface to the Physical Service, a Virtual Service offers the ability to attach Policies for security, logging, QoS, and a number of other non-functional capabilities.
 Virtual Services also have the ability to have Custom Process and Scripts run before the Physical Service is called. Here is where a lot of the magic of Integration occurs.
 
